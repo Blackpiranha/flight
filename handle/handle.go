@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"flight/gin"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
 type Address struct {
-	Start string
-	End   string
+	Start string `json:"start"`
+	End   string `json:"end"`
 }
 type AddressList struct {
 	Address []Address
@@ -22,10 +21,15 @@ func Track(c *gin.Context) {
 	data, _ := ioutil.ReadAll(c.Req.Body)
 	err := json.Unmarshal(data, address)
 	if err != nil {
-		log.Fatalf("unmarshal failed")
+		//log.Fatalf("unmarshal failed")
+		c.Fail(http.StatusBadRequest, "invalid parameter;")
+		return
 	}
-	if len(address.Address) == 1 {
-		c.JSON(http.StatusOK, address.Address[0])
+	if len(address.Address) == 0 {
+		c.Fail(http.StatusBadRequest, "invalid parameter;")
+		return
+	} else if len(address.Address) == 1 {
+		c.Success(http.StatusOK, address.Address[0])
 	} else {
 		starts := make([]string, len(address.Address))
 		ends := make([]string, len(address.Address))
@@ -33,10 +37,11 @@ func Track(c *gin.Context) {
 			starts = append(starts, addr.Start)
 			ends = append(ends, addr.End)
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"Start": findDifferences(starts, ends),
-			"End":   findDifferences(ends, starts),
-		})
+		position := Address{
+			Start: findDifferences(starts, ends),
+			End:   findDifferences(ends, starts),
+		}
+		c.Success(http.StatusOK, position)
 	}
 
 }

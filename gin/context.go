@@ -19,6 +19,11 @@ type Context struct {
 	index      int
 }
 
+type Response struct {
+	code    int
+	message string
+}
+
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
 		Req:        r,
@@ -42,7 +47,7 @@ func (c *Context) Fail(code int, err string) {
 
 	c.index = len(c.handlers)
 
-	c.JSON(code, H{"message": err})
+	c.JSON(code, H{"message": err, "code": code})
 }
 
 func (c *Context) Param(key string) string {
@@ -71,6 +76,10 @@ func (c *Context) String(code int, format string, values ...interface{}) {
 	c.SetHeader("Content-Type", "text/plain;charset=utf-8")
 	c.Status(code)
 	_, _ = c.Writer.Write([]byte(fmt.Sprintf(format, values...)))
+}
+
+func (c *Context) Success(code int, data interface{}) {
+	c.JSON(code, H{"code": code, "data": data})
 }
 
 func (c *Context) JSON(code int, obj interface{}) {
